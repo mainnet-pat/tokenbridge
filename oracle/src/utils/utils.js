@@ -166,6 +166,7 @@ function isInsufficientBalanceError(e) {
 function isNonceError(e) {
   const message = e.message.toLowerCase()
   return (
+    message.includes('bad nonce') ||
     message.includes('transaction nonce is too low') ||
     message.includes('nonce too low') ||
     message.includes('transaction with same nonce in the queue') ||
