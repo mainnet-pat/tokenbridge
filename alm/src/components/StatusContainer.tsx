@@ -89,12 +89,6 @@ export const StatusContainer = ({ onBackToMain, setNetworkFromParams, receiptPar
     )
   }
 
-  console.log(messageToConfirm,
-    receipt,
-    isHome,
-    homeStartBlock,
-    foreignStartBlock)
-
   return (
     <div>
       {status && (
