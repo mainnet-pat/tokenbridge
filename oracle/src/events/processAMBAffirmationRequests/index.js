@@ -5,7 +5,7 @@ const rootLogger = require('../../services/logger')
 const { getValidatorContract } = require('../../tx/web3')
 const { EXIT_CODES, MAX_CONCURRENT_EVENTS, EXTRA_GAS_ABSOLUTE } = require('../../utils/constants')
 const estimateGas = require('./estimateGas')
-const { parseAMBMessage } = require('../../../../commons')
+const { parseAMBMessage, parseOmniBridgeMessage, OmniBridgeSelectors } = require('../../../../commons')
 const { AlreadyProcessedError, AlreadySignedError, InvalidValidatorError } = require('../../utils/errors')
 
 const limit = promiseLimit(MAX_CONCURRENT_EVENTS)
@@ -25,14 +25,22 @@ function processAffirmationRequestsBuilder(config) {
     rootLogger.debug(`Processing ${affirmationRequests.length} AffirmationRequest events`)
     const callbacks = affirmationRequests
       .map(affirmationRequest => async () => {
-        const { messageId, encodedData: message } = affirmationRequest.returnValues
+        let { messageId, encodedData: message } = affirmationRequest.returnValues
 
         const logger = rootLogger.child({
           eventTransactionHash: affirmationRequest.transactionHash,
           eventMessageId: messageId
         })
 
-        const { sender, executor } = parseAMBMessage(message)
+        const { sender, executor, gasLimit } = parseAMBMessage(message)
+
+        const { selector } = parseOmniBridgeMessage(message)
+        const deploymentExtraGas =
+          [OmniBridgeSelectors.deployAndHandleBridgedTokens, OmniBridgeSelectors.deployAndHandleBridgedTokens].includes(selector) ?
+          450000 : 0;
+        if (deploymentExtraGas) {
+          message = `${message.slice(0, 146)}${(gasLimit + deploymentExtraGas).toString(16).padStart(8,'0')}${message.slice(154)}`;
+        }
 
         logger.info({ sender, executor }, `Processing affirmationRequest ${messageId}`)
 

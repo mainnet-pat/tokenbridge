@@ -4,31 +4,11 @@ const logger = require('../../services/logger').child({
   module: 'processAffirmationRequests:estimateGas'
 })
 const { parseAMBHeader } = require('../../utils/message')
-const { strip0x, parseOmniBridgeMessage, OmniBridgeSelectors } = require('../../../../commons')
+const { strip0x } = require('../../../../commons')
 const {
   AMB_AFFIRMATION_REQUEST_EXTRA_GAS_ESTIMATOR: estimateExtraGas,
   MIN_AMB_HEADER_LENGTH
 } = require('../../utils/constants')
-
-const HomeOmniBridgeAbi = [{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "_nativeToken",
-      "type": "address"
-    }
-  ],
-  "name": "bridgedTokenAddress",
-  "outputs": [
-    {
-      "internalType": "address",
-      "name": "",
-      "type": "address"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-}]
 
 async function estimateGas({ web3, homeBridge, validatorContract, message, address }) {
   try {
@@ -36,16 +16,11 @@ async function estimateGas({ web3, homeBridge, validatorContract, message, addre
       from: address
     })
 
-    const { selector } = parseOmniBridgeMessage(message)
-    const deploymentExtraGas =
-      [OmniBridgeSelectors.deployAndHandleBridgedTokens, OmniBridgeSelectors.deployAndHandleBridgedTokens].includes(selector) ?
-      450000 : 0;
-
     const msgGasLimit = Math.ceil((parseAMBHeader(message).gasLimit * 64) / 63)
     // message length in bytes
     const len = strip0x(message).length / 2 - MIN_AMB_HEADER_LENGTH
 
-    return gasEstimate + msgGasLimit + deploymentExtraGas + estimateExtraGas(len)
+    return gasEstimate + msgGasLimit + estimateExtraGas(len)
   } catch (e) {
     if (e instanceof HttpListProviderError) {
       throw e

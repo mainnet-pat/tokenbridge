@@ -57,9 +57,7 @@ const OmniBridgeSelectors = {
 
 // does a partial omni bridge message parsing
 function parseOmniBridgeMessage(message) {
-  // message = strip0x(message)
   const parsed = parseAMBMessage(message)
-  console.log(parsed)
   const data = strip0x(parsed.data)
 
   const selector = `0x${data.slice(0, 8)}`
